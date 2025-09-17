@@ -3,7 +3,7 @@ import React from 'react';
 import GetPremiumScreen from '../components/GetPremiumScreen';
 
 export default function GetPremiumPage() {
-  const handleGetPremium = (plan: 'monthly' | 'yearly') => {
+  const handleGetPremium = (plan: 'monthly' | '3month' | 'yearly') => {
     // TODO: Handle premium subscription logic
     console.log(`Selected ${plan} plan`);
     

@@ -1,20 +1,22 @@
+import { router } from 'expo-router';
 import React from 'react';
 import MainDashboard from '../components/MainDashboard';
 
 export default function DashboardPage() {
-  const handleSignToday = () => {
-    // TODO: Navigate to daily ritual/check-in screen
-    console.log('Sign Today pressed');
+  const handleCheckInToday = () => {
+    // Navigate to check-in screen with today's date
+    const today = new Date().toISOString().split('T')[0];
+    router.push(`./checkin?date=${today}`);
   };
 
   const handlePanicPress = () => {
-    // TODO: Navigate to panic/emergency motivation screen
-    console.log('Panic button pressed');
+    // Navigate to panic screen immediately
+    router.push('./panic');
   };
 
   const handleCalendarPress = () => {
-    // TODO: Navigate to calendar view
-    console.log('Calendar pressed');
+    // Navigate to calendar view
+    router.push('./calendar');
   };
 
   const handleHistoryPress = () => {
@@ -29,7 +31,7 @@ export default function DashboardPage() {
 
   return (
     <MainDashboard
-      onSignToday={handleSignToday}
+      onCheckInToday={handleCheckInToday}
       onPanicPress={handlePanicPress}
       onCalendarPress={handleCalendarPress}
       onHistoryPress={handleHistoryPress}
