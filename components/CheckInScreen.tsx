@@ -1,6 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     Dimensions,
     PanResponder,
@@ -11,6 +12,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { DatabaseService } from '../lib/database.service';
 
 interface CheckInScreenProps {
   onBack: () => void;
@@ -23,6 +26,7 @@ interface CheckInData {
   fapped: boolean;
   signature: string;
   reflection: string;
+  moodRating: number; // 1-10 scale
 }
 
 const { width } = Dimensions.get('window');
@@ -32,14 +36,18 @@ export default function CheckInScreen({
   onSave, 
   selectedDate 
 }: CheckInScreenProps) {
-  const [step, setStep] = useState(1); // 1: Question, 2: Signature, 3: Reflection
+  const { user } = useAuth();
+  const [step, setStep] = useState(1); // 1: Question, 2: Mood, 3: Signature, 4: Reflection
   const [fapped, setFapped] = useState<boolean | null>(null);
+  const [moodRating, setMoodRating] = useState<number>(5);
   const [signature, setSignature] = useState('');
   const [reflection, setReflection] = useState('');
   const [signaturePaths, setSignaturePaths] = useState<string[]>([]);
   const [currentPath, setCurrentPath] = useState('');
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawnSignature, setHasDrawnSignature] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [existingCheckin, setExistingCheckin] = useState(false);
 
   const currentDate = selectedDate || new Date().toISOString().split('T')[0];
   const displayDate = new Date(currentDate).toLocaleDateString('en-US', { 
@@ -49,9 +57,36 @@ export default function CheckInScreen({
     day: 'numeric' 
   });
 
+  useEffect(() => {
+    checkExistingCheckin();
+  }, [user, currentDate]);
+
+  const checkExistingCheckin = async () => {
+    if (!user) return;
+    
+    try {
+      const { data } = await DatabaseService.getTodayCheckin(user.id);
+      if (data) {
+        setExistingCheckin(true);
+        // Load existing data
+        setFapped(data.mood_rating ? data.mood_rating < 7 : false);
+        setMoodRating(data.mood_rating || 5);
+        setReflection(data.notes || '');
+        setSignature('existing_signature');
+        setHasDrawnSignature(true);
+      }
+    } catch (error) {
+      console.error('Error checking existing check-in:', error);
+    }
+  };
+
   const handleQuestionAnswer = (answer: boolean) => {
     setFapped(answer);
-    setStep(2);
+    setStep(2); // Go to mood rating
+  };
+
+  const handleMoodNext = () => {
+    setStep(3); // Go to signature
   };
 
   const handleSignatureNext = () => {
@@ -60,7 +95,7 @@ export default function CheckInScreen({
       return;
     }
     setSignature('signature_drawn'); // Mark as completed
-    setStep(3);
+    setStep(4); // Go to reflection
   };
 
   const clearSignature = () => {
@@ -98,27 +133,108 @@ export default function CheckInScreen({
     },
   });
 
-  const handleSaveCheckIn = () => {
-    if (fapped === null) return;
+  const handleSaveCheckIn = async () => {
+    if (fapped === null || !user) return;
     
-    const checkInData: CheckInData = {
-      date: currentDate,
-      fapped,
-      signature: signature.trim(),
-      reflection: reflection.trim(),
-    };
+    setLoading(true);
+    
+    try {
+      const checkInData: CheckInData = {
+        date: currentDate,
+        fapped,
+        signature: signature.trim(),
+        reflection: reflection.trim(),
+        moodRating,
+      };
 
-    onSave(checkInData);
+      // Save to database
+      if (existingCheckin) {
+        // Update existing check-in
+        const { data: existingData } = await DatabaseService.getTodayCheckin(user.id);
+        if (existingData) {
+          await DatabaseService.updateCheckin(existingData.id, {
+            mood_rating: moodRating,
+            notes: reflection.trim(),
+          });
+        }
+      } else {
+        // Create new check-in
+        await DatabaseService.createCheckin(user.id, {
+          date: currentDate,
+          mood_rating: moodRating,
+          notes: reflection.trim(),
+        });
+      }
+
+      // Update user streak if needed
+      await updateUserStreak();
+
+      Alert.alert(
+        'Check-in Saved!', 
+        existingCheckin ? 'Your check-in has been updated.' : 'Your daily check-in has been recorded.',
+        [{ text: 'OK', onPress: () => onSave(checkInData) }]
+      );
+      
+    } catch (error) {
+      console.error('Error saving check-in:', error);
+      Alert.alert('Error', 'Failed to save your check-in. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateUserStreak = async () => {
+    if (!user) return;
+    
+    try {
+      const { data: currentStreak } = await DatabaseService.getCurrentStreak(user.id);
+      
+      if (fapped) {
+        // End current streak if relapsed
+        if (currentStreak) {
+          await DatabaseService.updateStreak(currentStreak.id, {
+            is_active: false,
+            end_date: currentDate,
+          });
+        }
+        
+        // Start new streak from tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        await DatabaseService.createStreak(user.id, {
+          start_date: tomorrow.toISOString().split('T')[0],
+          end_date: null,
+          is_active: true,
+          days_count: 0,
+        });
+      } else {
+        // Update current streak count
+        if (currentStreak) {
+          const startDate = new Date(currentStreak.start_date);
+          const today = new Date(currentDate);
+          const diffTime = Math.abs(today.getTime() - startDate.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+          
+          await DatabaseService.updateStreak(currentStreak.id, {
+            days_count: diffDays,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error updating streak:', error);
+    }
   };
 
   const renderQuestionStep = () => (
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Daily Check-in</Text>
-      <Text style={styles.questionText}>Did you fap today?</Text>
+      <Text style={styles.questionText}>
+        {existingCheckin ? 'Update your check-in for today:' : 'Did you fap today?'}
+      </Text>
       
       <View style={styles.optionsContainer}>
         <TouchableOpacity 
-          style={[styles.optionButton, styles.noButton]}
+          style={[styles.optionButton, styles.noButton, fapped === false && styles.selectedOption]}
           onPress={() => handleQuestionAnswer(false)}
         >
           <Text style={[styles.optionText, styles.noText]}>No</Text>
@@ -126,11 +242,78 @@ export default function CheckInScreen({
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.optionButton, styles.yesButton]}
+          style={[styles.optionButton, styles.yesButton, fapped === true && styles.selectedOption]}
           onPress={() => handleQuestionAnswer(true)}
         >
           <Text style={[styles.optionText, styles.yesText]}>Yes</Text>
           <Text style={styles.optionSubtext}>I relapsed</Text>
+        </TouchableOpacity>
+      </View>
+      
+      {existingCheckin && (
+        <Text style={styles.updateNote}>
+          You already checked in today. You can update your response.
+        </Text>
+      )}
+    </View>
+  );
+
+  const renderMoodStep = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>How are you feeling?</Text>
+      <Text style={styles.instructionText}>
+        Rate your overall mood and energy today (1-10):
+      </Text>
+      
+      <View style={styles.moodContainer}>
+        <Text style={styles.moodLabel}>1 (Low)</Text>
+        <View style={styles.moodSlider}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((rating) => (
+            <TouchableOpacity
+              key={rating}
+              style={[
+                styles.moodButton,
+                moodRating === rating && styles.selectedMood
+              ]}
+              onPress={() => setMoodRating(rating)}
+            >
+              <Text style={[
+                styles.moodButtonText,
+                moodRating === rating && styles.selectedMoodText
+              ]}>
+                {rating}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={styles.moodLabel}>10 (High)</Text>
+      </View>
+      
+      <Text style={styles.moodDescription}>
+        {moodRating <= 3 && "It's okay to have tough days. Tomorrow is a new opportunity."}
+        {moodRating >= 4 && moodRating <= 6 && "You're doing great. Keep pushing forward."}
+        {moodRating >= 7 && moodRating <= 8 && "Excellent! Your strength is showing."}
+        {moodRating >= 9 && "Amazing energy! You're conquering this journey."}
+      </Text>
+      
+      <View style={styles.stepButtons}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => setStep(1)}
+        >
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.nextButton}
+          onPress={handleMoodNext}
+        >
+          <LinearGradient
+            colors={['#d4af37', '#b8860b']}
+            style={styles.nextGradient}
+          >
+            <Text style={styles.nextButtonText}>Next</Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
@@ -179,7 +362,7 @@ export default function CheckInScreen({
       <View style={styles.stepButtons}>
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => setStep(1)}
+          onPress={() => setStep(2)}
         >
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
@@ -219,20 +402,27 @@ export default function CheckInScreen({
       <View style={styles.stepButtons}>
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => setStep(2)}
+          onPress={() => setStep(3)}
         >
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.saveButton}
+          style={[styles.saveButton, loading && styles.disabledButton]}
           onPress={handleSaveCheckIn}
+          disabled={loading}
         >
           <LinearGradient
             colors={['#228b22', '#32cd32']}
             style={styles.saveGradient}
           >
-            <Text style={styles.saveButtonText}>Save Check-in</Text>
+            {loading ? (
+              <ActivityIndicator color="white" size="small" />
+            ) : (
+              <Text style={styles.saveButtonText}>
+                {existingCheckin ? 'Update Check-in' : 'Save Check-in'}
+              </Text>
+            )}
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -265,17 +455,18 @@ export default function CheckInScreen({
             <View style={styles.progressBar}>
               <View style={[
                 styles.progressFill, 
-                { width: `${(step / 3) * 100}%` }
+                { width: `${(step / 4) * 100}%` }
               ]} />
             </View>
-            <Text style={styles.progressText}>Step {step} of 3</Text>
+            <Text style={styles.progressText}>Step {step} of 4</Text>
           </View>
 
           {/* Step Content */}
           <View style={styles.contentContainer}>
             {step === 1 && renderQuestionStep()}
-            {step === 2 && renderSignatureStep()}
-            {step === 3 && renderReflectionStep()}
+            {step === 2 && renderMoodStep()}
+            {step === 3 && renderSignatureStep()}
+            {step === 4 && renderReflectionStep()}
           </View>
 
           {/* Sacred Banner */}
@@ -443,6 +634,69 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: '#8b4513',
   },
+  selectedOption: {
+    backgroundColor: 'rgba(212, 175, 55, 0.2)',
+    borderColor: '#d4af37',
+    borderWidth: 3,
+  },
+  updateNote: {
+    fontSize: 14,
+    fontFamily: 'serif',
+    color: '#8b4513',
+    textAlign: 'center',
+    marginTop: 16,
+    fontStyle: 'italic',
+  },
+  
+  // Mood Rating Styles
+  moodContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  moodLabel: {
+    fontSize: 14,
+    fontFamily: 'serif',
+    color: '#3c2415',
+    fontWeight: '600',
+  },
+  moodSlider: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginVertical: 16,
+  },
+  moodButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(139, 69, 19, 0.1)',
+    borderWidth: 2,
+    borderColor: '#8b4513',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 2,
+  },
+  selectedMood: {
+    backgroundColor: '#d4af37',
+    borderColor: '#cd7f32',
+  },
+  moodButtonText: {
+    fontSize: 14,
+    fontFamily: 'serif',
+    color: '#3c2415',
+    fontWeight: 'bold',
+  },
+  selectedMoodText: {
+    color: '#ffffff',
+  },
+  moodDescription: {
+    fontSize: 16,
+    fontFamily: 'serif',
+    color: '#3c2415',
+    textAlign: 'center',
+    marginTop: 12,
+    fontStyle: 'italic',
+  },
   
   // Signature Step Styles
   instructionText: {
@@ -595,6 +849,9 @@ const styles = StyleSheet.create({
     fontFamily: 'serif',
     color: '#ffffff',
     fontWeight: 'bold',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   
   // Sacred Banner

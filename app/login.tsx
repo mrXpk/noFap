@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     ScrollView,
     StyleSheet,
@@ -11,31 +12,57 @@ import {
     View,
 } from 'react-native';
 import { Colors } from '../constants/theme';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Missing Information', 'Please fill in all fields.');
       return;
     }
 
-    // TODO: Implement actual login logic
+    setIsLoading(true);
+    
+    const { error } = await signIn(email, password);
+    
+    setIsLoading(false);
+    
+    if (error) {
+      Alert.alert(
+        'Login Failed',
+        error.message || 'Please check your credentials and try again.'
+      );
+      return;
+    }
+
+    // Success! Navigation will be handled by auth state change
     Alert.alert(
-      'Login Successful!',
-      'Welcome back to your transformation journey!',
+      'Welcome Back!',
+      'Login successful. Welcome back to your transformation journey!',
       [
         {
           text: 'Continue',
           onPress: () => {
-            // Navigate to get premium screen
-            router.replace('/get-premium');
+            router.replace('/dashboard');
           },
         },
       ]
     );
+  };
+
+  const handleForgotPassword = () => {
+    if (!email) {
+      Alert.alert('Email Required', 'Please enter your email address first.');
+      return;
+    }
+    
+    // TODO: Implement password reset
+    Alert.alert('Password Reset', 'Password reset functionality will be implemented soon.');
   };
 
   const handleBackToOnboarding = () => {
@@ -89,16 +116,24 @@ export default function LoginScreen() {
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword}>
+          <TouchableOpacity style={styles.forgotPassword} onPress={handleForgotPassword}>
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <TouchableOpacity 
+            style={[styles.loginButton, isLoading && styles.disabledButton]} 
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
             <LinearGradient
               colors={[Colors.sacred.darkWood, Colors.sacred.mediumWood]}
               style={styles.buttonGradient}
             >
-              <Text style={styles.loginButtonText}>✠ Log In ✠</Text>
+              {isLoading ? (
+                <ActivityIndicator color={Colors.sacred.goldLeaf} size="small" />
+              ) : (
+                <Text style={styles.loginButtonText}>✠ Log In ✠</Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -198,6 +233,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   buttonGradient: {
     paddingVertical: 16,

@@ -10,6 +10,8 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { DatabaseService } from '../lib/database.service';
 
 interface CalendarScreenProps {
   onBack: () => void;
@@ -31,12 +33,19 @@ const { width } = Dimensions.get('window');
 const daySize = (width - 60) / 7; // 7 days in a week, accounting for padding
 
 export default function CalendarScreen({ onBack, onNavigateToCheckIn }: CalendarScreenProps) {
+  const { user } = useAuth();
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
   const [showDayModal, setShowDayModal] = useState(false);
   const [dayNote, setDayNote] = useState('');
   const [fappedToday, setFappedToday] = useState<boolean | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [calendarData, setCalendarData] = useState<CalendarData>({});
+  const [loading, setLoading] = useState(true);
+  const [userStats, setUserStats] = useState({
+    currentStreak: 0,
+    longestStreak: 0,
+    totalRelapses: 0
+  });
 
   const monthlyQuotes = [
     "Discipline is choosing between what you want now and what you want most.",
@@ -47,17 +56,52 @@ export default function CalendarScreen({ onBack, onNavigateToCheckIn }: Calendar
   ];
 
   useEffect(() => {
-    // Initialize demo data for calendar
-    const demoData: CalendarData = {
-      '2025-09-01': { date: 1, status: 'success', fapped: false, note: 'Started strong!' },
-      '2025-09-02': { date: 2, status: 'success', fapped: false },
-      '2025-09-03': { date: 3, status: 'relapse', fapped: true, note: 'Struggled today, but tomorrow is a new day' },
-      '2025-09-04': { date: 4, status: 'success', fapped: false },
-      '2025-09-05': { date: 5, status: 'success', fapped: false },
-      '2025-09-15': { date: 15, status: 'success', fapped: false, note: 'Feeling stronger each day' },
-    };
-    setCalendarData(demoData);
-  }, []);
+    loadUserData();
+  }, [user]);
+
+  const loadUserData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Load user's real check-ins from database
+      const { data: checkins } = await DatabaseService.getUserCheckins(user.id);
+      
+      // Load user stats
+      const { data: stats } = await DatabaseService.getUserStats(user.id);
+      if (stats) {
+        setUserStats({
+          currentStreak: stats.currentStreak,
+          longestStreak: stats.longestStreak,
+          totalRelapses: stats.totalRelapses
+        });
+      }
+      
+      // Convert check-ins to calendar data
+      const calendarData: CalendarData = {};
+      if (checkins && checkins.length > 0) {
+        checkins.forEach(checkin => {
+          const dateKey = checkin.date;
+          calendarData[dateKey] = {
+            date: new Date(dateKey).getDate(),
+            status: checkin.mood_rating && checkin.mood_rating >= 7 ? 'success' : 'relapse',
+            note: checkin.notes || '',
+            fapped: checkin.mood_rating ? checkin.mood_rating < 7 : false
+          };
+        });
+      }
+      
+      setCalendarData(calendarData);
+    } catch (error) {
+      console.error('Error loading calendar data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getDaysInMonth = () => {
     const year = currentMonth.getFullYear();
@@ -161,9 +205,9 @@ export default function CalendarScreen({ onBack, onNavigateToCheckIn }: Calendar
     }
   };
 
-  const currentStreak = 21; // Demo data
-  const longestStreak = 45; // Demo data
-  const totalRelapses = 3; // Demo data
+  const currentStreak = userStats.currentStreak;
+  const longestStreak = userStats.longestStreak;
+  const totalRelapses = userStats.totalRelapses;
 
   return (
     <LinearGradient

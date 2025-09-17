@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React from 'react';
 import PanicScreen from '../components/PanicScreen';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function PanicPage() {
   const handleBack = () => {
@@ -8,6 +9,8 @@ export default function PanicPage() {
   };
 
   return (
-    <PanicScreen onBack={handleBack} />
+    <ProtectedRoute>
+      <PanicScreen onBack={handleBack} />
+    </ProtectedRoute>
   );
 }

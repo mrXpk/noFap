@@ -79,35 +79,7 @@ export default function PanicScreen({ onBack }: PanicScreenProps) {
       // Trigger haptic feedback immediately
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       
-      // Load and play emergency sound at 40% volume
-      try {
-        const { sound: emergencySound } = await Audio.Sound.createAsync(
-          require('../assets/sounds/emergency_panic.mp3'),
-          { shouldPlay: true, volume: 0.4 } // Start at 40% volume
-        );
-        setSound(emergencySound);
-        
-        // Gradually reduce volume during countdown
-        setTimeout(() => {
-          emergencySound.setVolumeAsync(0.3); // 30% at 1 second
-        }, 1000);
-        
-        setTimeout(() => {
-          emergencySound.setVolumeAsync(0.2); // 20% at 2 seconds
-        }, 2000);
-        
-        setTimeout(async () => {
-          // Stop sound completely when countdown ends
-          await emergencySound.stopAsync();
-          await emergencySound.unloadAsync();
-          setSound(null);
-        }, 3000);
-        
-      } catch (audioError) {
-        console.log('Emergency sound not found, continuing without audio:', audioError);
-      }
-      
-      // Start countdown animations immediately
+      // Start countdown and animations IMMEDIATELY, don't wait for audio
       startEmergencyCountdown();
       startCountdownPulse();
       
@@ -125,9 +97,49 @@ export default function PanicScreen({ onBack }: PanicScreenProps) {
         })
       ]).start();
       
+      // Load audio in background - don't block UI
+      loadEmergencyAudio();
+      
     } catch (error) {
       console.error('Failed to initialize emergency mode:', error);
+      // Still start countdown even if audio fails
       startEmergencyCountdown();
+      startCountdownPulse();
+    }
+  };
+
+  const loadEmergencyAudio = async () => {
+    try {
+      // Load and play emergency sound at 40% volume
+      const { sound: emergencySound } = await Audio.Sound.createAsync(
+        require('../assets/sounds/emergency_panic.mp3'),
+        { 
+          shouldPlay: true, 
+          volume: 0.4,
+          isLooping: false
+        }
+      );
+      setSound(emergencySound);
+      
+      // Gradually reduce volume during countdown
+      setTimeout(() => {
+        emergencySound.setVolumeAsync(0.3); // 30% at 1 second
+      }, 1000);
+      
+      setTimeout(() => {
+        emergencySound.setVolumeAsync(0.2); // 20% at 2 seconds
+      }, 2000);
+      
+      setTimeout(async () => {
+        // Stop sound completely when countdown ends
+        await emergencySound.stopAsync();
+        await emergencySound.unloadAsync();
+        setSound(null);
+      }, 3000);
+      
+    } catch (audioError) {
+      console.log('Emergency sound failed to load, continuing without audio:', audioError);
+      // Continue without audio - don't break the experience
     }
   };
 

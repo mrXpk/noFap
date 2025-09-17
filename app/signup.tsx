@@ -9,16 +9,20 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    ActivityIndicator,
 } from 'react-native';
 import { Colors } from '../constants/theme';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { signUp } = useAuth();
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Missing Information', 'Please fill in all fields.');
       return;
@@ -34,16 +38,28 @@ export default function SignupScreen() {
       return;
     }
 
-    // TODO: Implement actual signup logic
+    setIsLoading(true);
+    
+    const { error } = await signUp(email, password, name);
+    
+    setIsLoading(false);
+    
+    if (error) {
+      Alert.alert(
+        'Signup Failed',
+        error.message || 'Unable to create account. Please try again.'
+      );
+      return;
+    }
+
     Alert.alert(
       'Account Created Successfully!',
-      'Welcome to your transformation journey!\n\nYour commitment, reflections, and progress have been saved securely.',
+      'Welcome to your transformation journey!\n\nPlease check your email to verify your account.',
       [
         {
           text: 'Continue',
           onPress: () => {
-            // Navigate to get premium screen with saved onboarding data
-            router.replace('/get-premium');
+            router.replace('/dashboard');
           },
         },
       ]
@@ -133,12 +149,20 @@ export default function SignupScreen() {
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+          <TouchableOpacity 
+            style={[styles.signupButton, isLoading && styles.disabledButton]} 
+            onPress={handleSignup}
+            disabled={isLoading}
+          >
             <LinearGradient
               colors={[Colors.sacred.darkWood, Colors.sacred.mediumWood]}
               style={styles.buttonGradient}
             >
-              <Text style={styles.signupButtonText}>✠ Create Account ✠</Text>
+              {isLoading ? (
+                <ActivityIndicator color={Colors.sacred.goldLeaf} size="small" />
+              ) : (
+                <Text style={styles.signupButtonText}>✠ Create Account ✠</Text>
+              )}
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -243,6 +267,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   buttonGradient: {
     paddingVertical: 16,

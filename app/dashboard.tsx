@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React from 'react';
 import MainDashboard from '../components/MainDashboard';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function DashboardPage() {
   const handleCheckInToday = () => {
@@ -25,17 +26,25 @@ export default function DashboardPage() {
   };
 
   const handleYourWhyPress = () => {
-    // TODO: Navigate to user's WHY reflection
-    console.log('Your WHY pressed');
+    // Navigate to user's WHY reflection
+    router.push('./why-reflection');
+  };
+
+  const handleProfilePress = () => {
+    // Navigate to profile screen
+    router.push('./profile');
   };
 
   return (
-    <MainDashboard
-      onCheckInToday={handleCheckInToday}
-      onPanicPress={handlePanicPress}
-      onCalendarPress={handleCalendarPress}
-      onHistoryPress={handleHistoryPress}
-      onYourWhyPress={handleYourWhyPress}
-    />
+    <ProtectedRoute>
+      <MainDashboard
+        onCheckInToday={handleCheckInToday}
+        onPanicPress={handlePanicPress}
+        onCalendarPress={handleCalendarPress}
+        onHistoryPress={handleHistoryPress}
+        onYourWhyPress={handleYourWhyPress}
+        onProfilePress={handleProfilePress}
+      />
+    </ProtectedRoute>
   );
 }
