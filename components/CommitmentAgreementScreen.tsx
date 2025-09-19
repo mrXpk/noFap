@@ -44,12 +44,12 @@ export default function CommitmentAgreementScreen({ onCommitmentSigned }: Commit
   const signatureRef = useRef<any>(null);
 
   const handleOK = (signature: string) => {
-    console.log('Signature received:', signature ? 'Valid signature' : 'Empty signature');
+    // Signature received
     setSignature(signature);
   };
 
   const handleEmpty = () => {
-    console.log('Signature is empty');
+    // Signature is empty
     setSignature('');
   };
 
@@ -59,8 +59,7 @@ export default function CommitmentAgreementScreen({ onCommitmentSigned }: Commit
   };
 
   const handleConfirm = () => {
-    console.log('handleConfirm called - signature:', signature ? 'exists' : 'missing');
-    console.log('hasScrolledToBottom:', hasScrolledToBottom);
+    // handleConfirm called
     
     // Only check if user has scrolled to bottom, signature is now optional
     if (!hasScrolledToBottom) {

@@ -1,9 +1,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import {
     Alert,
     Animated,
     Dimensions,
+    Image,
     ScrollView,
     StyleSheet,
     Switch,
@@ -13,6 +15,7 @@ import {
     View,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import { DatabaseService } from '../lib/database.service';
 import { UserSettings } from '../lib/database.types';
 
@@ -31,12 +34,20 @@ export default function ProfileScreen({
   onYourWhyEdit,
   onMediaLogPress,
 }: ProfileScreenProps) {
-  const { user, userProfile, updateProfile } = useAuth();
+  const { user, userProfile, updateProfile, signOut } = useAuth();
+  const { 
+    scheduleCheckInReminder, 
+    scheduleMilestone, 
+    scheduleEmergencySupport,
+    permissionGranted,
+    requestPermissions
+  } = useNotifications();
   const [username, setUsername] = useState('Sacred Warrior');
   const [tagline, setTagline] = useState('Walking the path of discipline');
   const [yourWhy, setYourWhy] = useState('I choose this journey to become the best version of myself, to honor my body as a temple, and to live with purpose and integrity.');
   const [isEditingWhy, setIsEditingWhy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
   
   // Settings toggles
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -81,6 +92,7 @@ export default function ProfileScreen({
         setUsername(userProfile.username || 'Sacred Warrior');
         setTagline(userProfile.tagline || 'Walking the path of discipline');
         setYourWhy(userProfile.your_why || 'I choose this journey to become the best version of myself, to honor my body as a temple, and to live with purpose and integrity.');
+        setProfileImage(userProfile.avatar_url || null);
       }
       
       // Load user stats
@@ -98,7 +110,7 @@ export default function ProfileScreen({
         setPrivacyMode(settings.privacy_mode);
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      // Error loading user data
       Alert.alert('Error', 'Failed to load profile data.');
     } finally {
       setLoading(false);
@@ -136,9 +148,75 @@ export default function ProfileScreen({
       
       await DatabaseService.updateUserSettings(user.id, updates);
     } catch (error) {
-      console.error('Error updating settings:', error);
+      // Error updating settings
       Alert.alert('Error', 'Failed to update settings.');
     }
+  };
+
+  const handleProfileImageUpdate = async () => {
+    try {
+      // Request permission to access media library
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission Required', 'Permission to access camera roll is required!');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setProfileImage(imageUri);
+        
+        // Update profile with new image
+        if (user && updateProfile) {
+          const { error } = await updateProfile({ avatar_url: imageUri });
+          if (error) {
+            Alert.alert('Error', 'Failed to update profile picture.');
+            return;
+          }
+          Alert.alert('Success', 'Profile picture updated successfully!');
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update profile picture.');
+    }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const { error } = await signOut();
+              if (error) {
+                Alert.alert('Error', 'Failed to logout. Please try again.');
+                return;
+              }
+              // Navigation will be handled by auth state change
+            } catch (error) {
+              Alert.alert('Error', 'Failed to logout. Please try again.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -162,15 +240,19 @@ export default function ProfileScreen({
         >
           {/* Profile Avatar Section */}
           <View style={styles.profileSection}>
-            <TouchableOpacity style={styles.avatarContainer}>
+            <TouchableOpacity style={styles.avatarContainer} onPress={handleProfileImageUpdate}>
               <LinearGradient
                 colors={['#DAA520', '#B8860B']}
                 style={styles.avatarGradient}
               >
-                <Text style={styles.avatarIcon}>👤</Text>
+                {profileImage ? (
+                  <Image source={{ uri: profileImage }} style={styles.avatarImage} />
+                ) : (
+                  <Text style={styles.avatarIcon}>👤</Text>
+                )}
               </LinearGradient>
               <View style={styles.editBadge}>
-                <Text style={styles.editIcon}>✏️</Text>
+                <Text style={styles.editIcon}>📷</Text>
               </View>
             </TouchableOpacity>
             
@@ -344,6 +426,20 @@ export default function ProfileScreen({
                     thumbColor={privacyMode ? '#F5DEB3' : '#DEB887'}
                   />
                 </View>
+
+                <View style={styles.settingDivider} />
+
+                {/* Logout Button */}
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                  <View style={styles.settingContent}>
+                    <Text style={styles.settingIcon}>🚪</Text>
+                    <View style={styles.settingText}>
+                      <Text style={styles.logoutTitle}>Logout</Text>
+                      <Text style={styles.settingSubtitle}>Sign out of your account</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.logoutArrow}>›</Text>
+                </TouchableOpacity>
               </LinearGradient>
             </View>
           </View>
@@ -433,6 +529,11 @@ const styles = StyleSheet.create({
   avatarIcon: {
     fontSize: 48,
     color: '#FFFFFF',
+  },
+  avatarImage: {
+    width: 114,
+    height: 114,
+    borderRadius: 57,
   },
   editBadge: {
     position: 'absolute',
@@ -782,6 +883,24 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(139, 69, 19, 0.2)',
     marginVertical: 12,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  logoutTitle: {
+    fontSize: 16,
+    fontFamily: 'serif',
+    color: '#DC143C',
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  logoutArrow: {
+    fontSize: 20,
+    color: '#DC143C',
+    fontWeight: 'bold',
   },
 
   // Footer Section

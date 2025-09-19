@@ -101,7 +101,7 @@ export default function PanicScreen({ onBack }: PanicScreenProps) {
       loadEmergencyAudio();
       
     } catch (error) {
-      console.error('Failed to initialize emergency mode:', error);
+      // Failed to initialize emergency mode
       // Still start countdown even if audio fails
       startEmergencyCountdown();
       startCountdownPulse();
@@ -138,7 +138,7 @@ export default function PanicScreen({ onBack }: PanicScreenProps) {
       }, 3000);
       
     } catch (audioError) {
-      console.log('Emergency sound failed to load, continuing without audio:', audioError);
+      // Emergency sound failed to load, continuing without audio
       // Continue without audio - don't break the experience
     }
   };
@@ -163,7 +163,7 @@ export default function PanicScreen({ onBack }: PanicScreenProps) {
         await sound.unloadAsync();
         setSound(null);
       } catch (error) {
-        console.log('Error cleaning up sound:', error);
+        // Error cleaning up sound
       }
     }
     if (backgroundSound) {
@@ -172,7 +172,7 @@ export default function PanicScreen({ onBack }: PanicScreenProps) {
         await backgroundSound.unloadAsync();
         setBackgroundSound(null);
       } catch (error) {
-        console.log('Error cleaning up background sound:', error);
+        // Error cleaning up background sound
       }
     }
   };
@@ -315,11 +315,11 @@ export default function PanicScreen({ onBack }: PanicScreenProps) {
         });
         // Video recorded successfully
         if (video) {
-          console.log('Video saved to:', video.uri);
+          // Video saved successfully
           setIsRecording(false);
         }
       } catch (error) {
-        console.error('Recording failed:', error);
+        // Recording failed
         setIsRecording(false);
       }
     }

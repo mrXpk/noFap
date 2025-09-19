@@ -1,14 +1,14 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { DatabaseService } from '../lib/database.service';
@@ -17,7 +17,7 @@ interface MainDashboardProps {
   onCheckInToday: () => void;
   onPanicPress: () => void;
   onCalendarPress: () => void;
-  onHistoryPress: () => void;
+  onSacredPathPress: () => void; // Replaced History with Sacred Path
   onYourWhyPress: () => void;
   onProfilePress?: () => void;
 }
@@ -28,7 +28,7 @@ export default function MainDashboard({
   onCheckInToday,
   onPanicPress,
   onCalendarPress,
-  onHistoryPress,
+  onSacredPathPress,
   onYourWhyPress,
   onProfilePress = () => {},
 }: MainDashboardProps) {
@@ -93,7 +93,7 @@ export default function MainDashboard({
         await createInitialStreak();
       }
     } catch (error) {
-      console.error('Error loading user data:', error);
+      // Error loading user data
       Alert.alert('Error', 'Failed to load your progress data.');
     } finally {
       setLoading(false);
@@ -115,10 +115,10 @@ export default function MainDashboard({
       if (data) {
         setCurrentStreak(1);
       } else if (error) {
-        console.error('Error creating initial streak:', error);
+        // Error creating initial streak
       }
     } catch (error) {
-      console.error('Error creating initial streak:', error);
+      // Error creating initial streak
     }
   };
 
@@ -145,8 +145,8 @@ export default function MainDashboard({
       case 'Calendar':
         onCalendarPress();
         break;
-      case 'History':
-        onHistoryPress();
+      case 'Sacred Path':
+        onSacredPathPress();
         break;
       case 'Motivation':
         onYourWhyPress();
@@ -294,7 +294,7 @@ export default function MainDashboard({
             colors={['rgba(139, 69, 19, 0.95)', 'rgba(160, 82, 45, 0.95)']}
             style={styles.navGradient}
           >
-            {['Dashboard', 'Calendar', 'History', 'Motivation'].map((tab) => (
+            {['Dashboard', 'Calendar', 'Sacred Path', 'Motivation'].map((tab) => (
               <TouchableOpacity
                 key={tab}
                 style={[
@@ -306,7 +306,7 @@ export default function MainDashboard({
                 <Text style={styles.navIcon}>
                   {tab === 'Dashboard' && '🏠'}
                   {tab === 'Calendar' && '📅'}
-                  {tab === 'History' && '📚'}
+                  {tab === 'Sacred Path' && '🛡️'}
                   {tab === 'Motivation' && '💭'}
                 </Text>
                 <Text style={[

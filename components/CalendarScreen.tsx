@@ -97,7 +97,7 @@ export default function CalendarScreen({ onBack, onNavigateToCheckIn }: Calendar
       
       setCalendarData(calendarData);
     } catch (error) {
-      console.error('Error loading calendar data:', error);
+      // Error loading calendar data
     } finally {
       setLoading(false);
     }

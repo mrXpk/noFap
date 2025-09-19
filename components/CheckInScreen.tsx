@@ -76,7 +76,7 @@ export default function CheckInScreen({
         setHasDrawnSignature(true);
       }
     } catch (error) {
-      console.error('Error checking existing check-in:', error);
+      // Error checking existing check-in
     }
   };
 
@@ -176,7 +176,7 @@ export default function CheckInScreen({
       );
       
     } catch (error) {
-      console.error('Error saving check-in:', error);
+      // Error saving check-in
       Alert.alert('Error', 'Failed to save your check-in. Please try again.');
     } finally {
       setLoading(false);
@@ -221,7 +221,7 @@ export default function CheckInScreen({
         }
       }
     } catch (error) {
-      console.error('Error updating streak:', error);
+      // Error updating streak
     }
   };
 

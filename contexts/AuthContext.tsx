@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(data);
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      // Error loading user profile
     } finally {
       setLoading(false);
     }

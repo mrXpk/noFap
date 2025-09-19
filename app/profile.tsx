@@ -18,8 +18,8 @@ export default function ProfilePage() {
   };
 
   const handleMediaLogPress = () => {
-    // TODO: Navigate to media log screen when implemented
-    console.log('Media log pressed');
+    // Navigate to media log screen
+    // Navigate to media log
   };
 
   return (

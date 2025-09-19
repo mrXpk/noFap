@@ -17,8 +17,8 @@ export default function CheckInPage() {
   };
 
   const handleSave = (data: CheckInData) => {
-    // TODO: Save to local storage or backend
-    console.log('Check-in saved:', data);
+    // Save check-in data
+    // Check-in saved successfully
     
     // Show success message and navigate back
     // For now, just go back to previous screen

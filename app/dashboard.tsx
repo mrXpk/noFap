@@ -20,9 +20,9 @@ export default function DashboardPage() {
     router.push('./calendar');
   };
 
-  const handleHistoryPress = () => {
-    // TODO: Navigate to history/journal view
-    console.log('History pressed');
+  const handleSacredPathPress = () => {
+    // Navigate to Sacred Path (milestones/rewards) screen
+    router.push('./sacred-path');
   };
 
   const handleYourWhyPress = () => {
@@ -41,7 +41,7 @@ export default function DashboardPage() {
         onCheckInToday={handleCheckInToday}
         onPanicPress={handlePanicPress}
         onCalendarPress={handleCalendarPress}
-        onHistoryPress={handleHistoryPress}
+        onSacredPathPress={handleSacredPathPress}
         onYourWhyPress={handleYourWhyPress}
         onProfilePress={handleProfilePress}
       />

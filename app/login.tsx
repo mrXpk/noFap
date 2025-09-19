@@ -18,6 +18,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
@@ -61,7 +62,7 @@ export default function LoginScreen() {
       return;
     }
     
-    // TODO: Implement password reset
+    // Implement password reset
     Alert.alert('Password Reset', 'Password reset functionality will be implemented soon.');
   };
 
@@ -106,14 +107,22 @@ export default function LoginScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              placeholderTextColor={Colors.sacred.bronze}
-              secureTextEntry
-            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                placeholderTextColor={Colors.sacred.bronze}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity style={styles.forgotPassword} onPress={handleForgotPassword}>
@@ -219,6 +228,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.sacred.darkWood,
     backgroundColor: Colors.sacred.parchment,
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  passwordInput: {
+    borderWidth: 1,
+    borderColor: Colors.sacred.bronze,
+    borderRadius: 8,
+    padding: 12,
+    paddingRight: 50,
+    fontSize: 16,
+    color: Colors.sacred.darkWood,
+    backgroundColor: Colors.sacred.parchment,
+  },
+  eyeButton: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+    padding: 4,
+  },
+  eyeIcon: {
+    fontSize: 18,
+    color: Colors.sacred.bronze,
   },
   forgotPassword: {
     alignItems: 'flex-end',

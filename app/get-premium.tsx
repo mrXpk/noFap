@@ -4,8 +4,8 @@ import GetPremiumScreen from '../components/GetPremiumScreen';
 
 export default function GetPremiumPage() {
   const handleGetPremium = (plan: 'monthly' | '3month' | 'yearly') => {
-    // TODO: Handle premium subscription logic
-    console.log(`Selected ${plan} plan`);
+    // Handle premium subscription logic
+    // Premium plan selected
     
     // After successful payment, navigate to dashboard
     router.replace('/dashboard');

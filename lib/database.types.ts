@@ -50,6 +50,14 @@ export interface UserSettings {
   privacy_mode: boolean;
   reminder_times: any[]; // JSONB array
   theme_preference: string;
+  notification_settings?: {
+    enabled: boolean;
+    dailyCheckInTime: string;
+    motivationalEnabled: boolean;
+    motivationalFrequency: 'daily' | 'twice_daily' | 'weekly';
+    milestoneEnabled: boolean;
+    weekendRemindersEnabled: boolean;
+  };
   created_at: string;
   updated_at: string;
 }

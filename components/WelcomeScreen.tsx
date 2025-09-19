@@ -1,13 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
 import React from 'react';
 import {
-  Dimensions,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -64,24 +63,6 @@ export default function WelcomeScreen({ onReady }: WelcomeScreenProps) {
                 activeOpacity={0.8}
               >
                 <Text style={styles.buttonText}>I'm Ready</Text>
-              </TouchableOpacity>
-              
-              {/* Temporary Dashboard Test Button */}
-              <TouchableOpacity
-                style={[styles.readyButton, { backgroundColor: '#cd7f32', marginTop: 16 }]}
-                onPress={() => router.push('/dashboard')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.buttonText}>🏠 Test Dashboard</Text>
-              </TouchableOpacity>
-              
-              {/* Temporary Get Premium Test Button */}
-              <TouchableOpacity
-                style={[styles.readyButton, { backgroundColor: '#d4af37', marginTop: 8 }]}
-                onPress={() => router.push('/get-premium')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.buttonText}>💎 Test Get Premium</Text>
               </TouchableOpacity>
             </View>
           </View>
