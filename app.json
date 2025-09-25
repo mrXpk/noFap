@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "noFap2",
-    "slug": "noFap2",
+    "name": "noFap",
+    "slug": "noFap",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/nofap-icon.png",
-    "scheme": "nofap2",
+    "scheme": "nofap",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.nofap.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#8B4513",
         "foregroundImage": "./assets/images/nofap-logo-foreground.png",
@@ -19,7 +21,15 @@
         "monochromeImage": "./assets/images/nofap-logo-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.NOTIFICATIONS",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "output": "static",
@@ -51,6 +61,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b535195e-3995-4afa-952c-6180c7c4c13a"
+      }
+    },
+    "owner": "pk_haha"
   }
 }

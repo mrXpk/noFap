@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Verified - NoFap</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #F5DEB3, #DEB887, #CD853F);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(139, 69, 19, 0.3);
+            border: 2px solid #DAA520;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .title {
+            color: #8B4513;
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            color: #A0522D;
+            font-size: 18px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        .success-icon {
+            font-size: 64px;
+            color: #228B22;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+        
+        .instructions {
+            color: #8B4513;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+            padding: 20px;
+            background: rgba(218, 165, 32, 0.1);
+            border-radius: 12px;
+            border-left: 4px solid #DAA520;
+        }
+        
+        .app-button {
+            background: linear-gradient(135deg, #8B4513, #A0522D);
+            color: #F5DEB3;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            border: 2px solid #DAA520;
+            transition: all 0.3s ease;
+        }
+        
+        .app-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(139, 69, 19, 0.4);
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 24px 0;
+        }
+        
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(139, 69, 19, 0.3);
+        }
+        
+        .divider-symbol {
+            margin: 0 16px;
+            color: #DAA520;
+            font-size: 16px;
+        }
+        
+        .footer {
+            color: #A0522D;
+            font-size: 14px;
+            font-style: italic;
+            margin-top: 24px;
+            opacity: 0.8;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🛡️🔥</div>
+        
+        <div class="success-icon">✅</div>
+        
+        <h1 class="title">Account Verified!</h1>
+        
+        <p class="subtitle">Your NoFap account has been successfully verified.</p>
+        
+        <div class="divider">
+            <div class="divider-line"></div>
+            <div class="divider-symbol">✦</div>
+            <div class="divider-line"></div>
+        </div>
+        
+        <div class="instructions">
+            <strong>Next Steps:</strong><br>
+            Please return to the NoFap app on your device and log in with your credentials to begin your sacred journey of discipline and transformation.
+        </div>
+        
+        <a href="#" class="app-button" onclick="attemptAppRedirect()">
+            ✠ Return to App ✠
+        </a>
+        
+        <div class="divider">
+            <div class="divider-line"></div>
+            <div class="divider-symbol">✦</div>
+            <div class="divider-line"></div>
+        </div>
+        
+        <div class="footer">
+            "Be strong and courageous!" - Joshua 1:9
+        </div>
+    </div>
+    
+    <script>
+        function attemptAppRedirect() {
+            // Try to open the app using custom URL scheme
+            const appUrl = 'nofap://verified';
+            
+            // Create a hidden iframe to attempt app launch
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = appUrl;
+            document.body.appendChild(iframe);
+            
+            // Fallback: Show instructions if app doesn't open
+            setTimeout(() => {
+                alert('Please manually open the NoFap app on your device to continue.');
+                document.body.removeChild(iframe);
+            }, 2000);
+        }
+        
+        // Auto-redirect attempt after 3 seconds
+        setTimeout(() => {
+            console.log('Attempting automatic app redirect...');
+            // Uncomment the line below if you want automatic redirect
+            // attemptAppRedirect();
+        }, 3000);
+    </script>
+</body>
+</html>

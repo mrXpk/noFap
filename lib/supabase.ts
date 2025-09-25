@@ -10,10 +10,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     // Enable automatic session refresh
     autoRefreshToken: true,
-    // Persist session in AsyncStorage
+    // Persist session in storage
     persistSession: true,
     // Detect session changes (login/logout)
     detectSessionInUrl: false,
+    // Flow type for better mobile experience
+    flowType: 'pkce',
+    // Storage key for React Native
+    storageKey: 'nofap-auth-token',
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'nofap-app@1.0.0',
+    },
   },
 });
 

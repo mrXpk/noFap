@@ -6,14 +6,23 @@ import WelcomeScreen from '../components/WelcomeScreen';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Index() {
-  const { user, loading } = useAuth();
+  const { user, loading, hasCompletedOnboarding } = useAuth();
 
   useEffect(() => {
-    if (!loading && user) {
-      // User is authenticated, redirect to dashboard
-      router.replace('/dashboard');
+    if (!loading) {
+      if (user) {
+        // User is authenticated
+        if (hasCompletedOnboarding) {
+          // User has completed onboarding, go to dashboard
+          router.replace('/dashboard');
+        } else {
+          // User needs to complete onboarding, but skip welcome
+          router.replace('/commitment');
+        }
+      }
+      // If no user, stay on welcome screen
     }
-  }, [user, loading]);
+  }, [user, loading, hasCompletedOnboarding]);
 
   const handleReady = () => {
     // Navigate to commitment agreement screen

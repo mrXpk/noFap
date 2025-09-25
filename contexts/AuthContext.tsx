@@ -10,6 +10,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   session: Session | null;
   loading: boolean;
+  hasCompletedOnboarding: boolean;
   
   // Authentication methods
   signUp: (email: string, password: string, username: string) => Promise<{ error?: any }>;
@@ -20,6 +21,9 @@ interface AuthContextType {
   // Profile methods
   updateProfile: (updates: Partial<UserProfile>) => Promise<{ error?: any }>;
   refreshProfile: () => Promise<void>;
+  
+  // Onboarding methods
+  markOnboardingComplete: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,23 +33,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserProfile(session.user.id);
-      } else {
-        setLoading(false);
+    let mounted = true;
+    let initTimeout: any;
+    
+    const initializeAuth = async () => {
+      try {
+        // Set a timeout to prevent infinite loading
+        initTimeout = setTimeout(() => {
+          if (mounted) {
+            console.warn('Auth initialization timeout');
+            setLoading(false);
+          }
+        }, 10000);
+        
+        // Get initial session with timeout
+        const { data: { session }, error } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Session check timeout')), 5000)
+          )
+        ]) as any;
+        
+        if (!mounted) return;
+        
+        // Clear the timeout since we got a response
+        if (initTimeout) clearTimeout(initTimeout);
+        
+        if (error) {
+          console.warn('Session check error:', error);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('🔐 Initial session check:', !!session, session?.user?.email);
+        console.log('📱 User authenticated:', !!session?.user);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await loadUserProfile(session.user.id);
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.warn('Auth initialization error:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    });
+    };
+    
+    initializeAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
+      console.log('🔄 Auth state changed:', event, !!session, session?.user?.email);
+      console.log('👤 Current user:', !!session?.user);
+      
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -53,11 +104,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await loadUserProfile(session.user.id);
       } else {
         setUserProfile(null);
+        setHasCompletedOnboarding(false);
         setLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      if (initTimeout) clearTimeout(initTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
@@ -70,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             username,
           },
+          emailRedirectTo: 'https://mrxpk.github.io/nofap-verification/verification-success.html',
         },
       });
 
@@ -141,9 +198,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await DatabaseService.getUserProfile(userId);
       if (data) {
         setUserProfile(data);
+        // Check if user has completed onboarding
+        setHasCompletedOnboarding(!!data.onboarding_completed);
+      } else if (error) {
+        console.warn('Error loading user profile:', error);
+        // If profile doesn't exist, create one
+        const { data: newProfile } = await DatabaseService.updateUserProfile(userId, {
+          username: null,
+          tagline: null,
+          avatar_url: null,
+          your_why: null,
+          onboarding_completed: false,
+        });
+        if (newProfile) {
+          setUserProfile(newProfile);
+          setHasCompletedOnboarding(false);
+        }
       }
     } catch (error) {
-      // Error loading user profile
+      console.warn('Exception loading user profile:', error);
     } finally {
       setLoading(false);
     }
@@ -172,17 +245,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const markOnboardingComplete = async () => {
+    if (user) {
+      try {
+        // Update user profile to mark onboarding as complete
+        await updateProfile({ onboarding_completed: true });
+        setHasCompletedOnboarding(true);
+      } catch (error) {
+        console.warn('Failed to mark onboarding complete:', error);
+      }
+    }
+  };
+
   const value: AuthContextType = {
     user,
     userProfile,
     session,
     loading,
+    hasCompletedOnboarding,
     signUp,
     signIn,
     signOut,
     resetPassword,
     updateProfile,
     refreshProfile,
+    markOnboardingComplete,
   };
 
   return (

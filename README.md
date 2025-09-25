@@ -74,7 +74,7 @@ Visualization → Final Push → Login/Signup → Get Premium → Dashboard
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd noFap2
+   cd noFap
    ```
 
 2. **Install dependencies**
@@ -95,7 +95,7 @@ Visualization → Final Push → Login/Signup → Get Premium → Dashboard
 ## 📂 Project Structure
 
 ```
-noFap2/
+noFap/
 ├── app/                          # Navigation routes
 │   ├── index.tsx                # Welcome screen route
 │   ├── commitment.tsx           # Commitment agreement route

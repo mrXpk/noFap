@@ -7,6 +7,7 @@ export interface UserProfile {
   tagline: string | null;
   avatar_url: string | null;
   your_why: string | null;
+  onboarding_completed: boolean | null;
   created_at: string;
   updated_at: string;
 }

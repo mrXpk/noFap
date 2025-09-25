@@ -22,7 +22,7 @@ export default function SignupScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, markOnboardingComplete } = useAuth();
 
   const handleSignup = async () => {
     if (!name || !email || !password || !confirmPassword) {
@@ -60,8 +60,10 @@ export default function SignupScreen() {
       [
         {
           text: 'Continue',
-          onPress: () => {
-            router.replace('/dashboard');
+          onPress: async () => {
+            // Mark onboarding as complete since user went through the full flow
+            await markOnboardingComplete();
+            // Navigation will be handled by auth state change in index.tsx
           },
         },
       ]

@@ -19,7 +19,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, markOnboardingComplete } = useAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -41,19 +41,11 @@ export default function LoginScreen() {
       return;
     }
 
-    // Success! Navigation will be handled by auth state change
-    Alert.alert(
-      'Welcome Back!',
-      'Login successful. Welcome back to your transformation journey!',
-      [
-        {
-          text: 'Continue',
-          onPress: () => {
-            router.replace('/dashboard');
-          },
-        },
-      ]
-    );
+    // Mark onboarding as complete for returning users
+    await markOnboardingComplete();
+    
+    // Success! Navigation will be handled by auth state change in index.tsx
+    // Don't manually navigate here - let the auth context handle routing
   };
 
   const handleForgotPassword = () => {
