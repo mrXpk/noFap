@@ -1,18 +1,18 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -24,6 +24,8 @@ interface ProfileScreenProps {
   onUpgradeToPro: () => void;
   onYourWhyEdit: () => void;
   onMediaLogPress: () => void;
+  onShareApp?: () => void;
+  onSignUp?: () => void;
 }
 
 const { width } = Dimensions.get('window');
@@ -33,6 +35,8 @@ export default function ProfileScreen({
   onUpgradeToPro,
   onYourWhyEdit,
   onMediaLogPress,
+  onShareApp = () => {},
+  onSignUp,
 }: ProfileScreenProps) {
   const { user, userProfile, updateProfile, signOut } = useAuth();
   const { 
@@ -43,6 +47,8 @@ export default function ProfileScreen({
     requestPermissions
   } = useNotifications();
   const [username, setUsername] = useState('Sacred Warrior');
+  const [realName, setRealName] = useState('');
+  const [nationality, setNationality] = useState('');
   const [tagline, setTagline] = useState('Walking the path of discipline');
   const [yourWhy, setYourWhy] = useState('I choose this journey to become the best version of myself, to honor my body as a temple, and to live with purpose and integrity.');
   const [isEditingWhy, setIsEditingWhy] = useState(false);
@@ -82,7 +88,18 @@ export default function ProfileScreen({
   }, [user]);
 
   const loadUserData = async () => {
-    if (!user) return;
+    // For guest users, show default values without making database calls
+    if (!user) {
+      setUsername('Guest Warrior');
+      setTagline('Explore the app before signing up');
+      setCurrentStreak(1);
+      setLongestStreak(1);
+      setTotalRelapses(0);
+      setNotificationsEnabled(true);
+      setPrivacyMode(false);
+      setLoading(false);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -90,6 +107,8 @@ export default function ProfileScreen({
       // Load user profile data
       if (userProfile) {
         setUsername(userProfile.username || 'Sacred Warrior');
+        setRealName(userProfile.real_name || '');
+        setNationality(userProfile.nationality || '');
         setTagline(userProfile.tagline || 'Walking the path of discipline');
         setYourWhy(userProfile.your_why || 'I choose this journey to become the best version of myself, to honor my body as a temple, and to live with purpose and integrity.');
         setProfileImage(userProfile.avatar_url || null);
@@ -134,7 +153,15 @@ export default function ProfileScreen({
   };
 
   const handleSettingsChange = async (setting: 'notifications' | 'privacy', value: boolean) => {
-    if (!user) return;
+    // For guest users, just update the local state without making database calls
+    if (!user) {
+      if (setting === 'notifications') {
+        setNotificationsEnabled(value);
+      } else {
+        setPrivacyMode(value);
+      }
+      return;
+    }
     
     try {
       const updates: Partial<UserSettings> = {};
@@ -154,6 +181,30 @@ export default function ProfileScreen({
   };
 
   const handleProfileImageUpdate = async () => {
+    // For guest users, show a message about signing up
+    if (!user) {
+      Alert.alert(
+        'Sign Up Required',
+        'Please sign up to customize your profile picture.',
+        [
+          {
+            text: 'Sign Up',
+            onPress: () => {
+              // Navigate to signup if the callback is provided
+              if (onSignUp) {
+                onSignUp();
+              }
+            }
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
+      return;
+    }
+    
     try {
       // Request permission to access media library
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -191,6 +242,11 @@ export default function ProfileScreen({
   };
 
   const handleLogout = async () => {
+    // For guest users, this shouldn't be called, but just in case
+    if (!user) {
+      return;
+    }
+    
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
@@ -258,6 +314,18 @@ export default function ProfileScreen({
             
             <Text style={styles.username}>{username}</Text>
             <Text style={styles.tagline}>{tagline}</Text>
+          </View>
+
+          {/* Real Name and Nationality Section */}
+          <View style={styles.infoSection}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Real Name:</Text>
+              <Text style={styles.infoValue}>{realName || 'Not set'}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Nationality:</Text>
+              <Text style={styles.infoValue}>{nationality || 'Not set'}</Text>
+            </View>
           </View>
 
           {/* Ornamental Divider */}
@@ -377,6 +445,28 @@ export default function ProfileScreen({
                     <Text style={styles.mediaSubtitle}>Access your strength sessions and reflections</Text>
                   </View>
                   <Text style={styles.mediaArrow}>›</Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* Share App Section */}
+          <View style={styles.shareSection}>
+            <Text style={styles.sectionTitle}>Spread the Sacred Path</Text>
+            <TouchableOpacity style={styles.shareCard} onPress={onShareApp}>
+              <LinearGradient
+                colors={['rgba(139, 69, 19, 0.1)', 'rgba(160, 82, 45, 0.05)']}
+                style={styles.shareCardGradient}
+              >
+                <View style={styles.shareContent}>
+                  <View style={styles.shareIconContainer}>
+                    <Text style={styles.shareIcon}>🌟</Text>
+                  </View>
+                  <View style={styles.shareText}>
+                    <Text style={styles.shareTitle}>Share with Friends</Text>
+                    <Text style={styles.shareSubtitle}>Help others discover their sacred journey</Text>
+                  </View>
+                  <Text style={styles.shareArrow}>›</Text>
                 </View>
               </LinearGradient>
             </TouchableOpacity>
@@ -901,6 +991,85 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#DC143C',
     fontWeight: 'bold',
+  },
+
+  // Share App Section
+  shareSection: {
+    marginBottom: 30,
+  },
+  shareCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(218, 165, 32, 0.3)',
+  },
+  shareCardGradient: {
+    padding: 20,
+  },
+  shareContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  shareIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(218, 165, 32, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  shareIcon: {
+    fontSize: 24,
+  },
+  shareText: {
+    flex: 1,
+  },
+  shareTitle: {
+    fontSize: 18,
+    fontFamily: 'serif',
+    color: '#8B4513',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  shareSubtitle: {
+    fontSize: 14,
+    fontFamily: 'serif',
+    color: '#A0522D',
+    lineHeight: 18,
+  },
+  shareArrow: {
+    fontSize: 20,
+    color: '#DAA520',
+    fontWeight: 'bold',
+  },
+
+  // Info Section
+  infoSection: {
+    backgroundColor: 'rgba(245, 245, 220, 0.9)',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#DAA520',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  infoLabel: {
+    fontSize: 16,
+    fontFamily: 'serif',
+    color: '#8B4513',
+    fontWeight: '600',
+  },
+  infoValue: {
+    fontSize: 16,
+    fontFamily: 'serif',
+    color: '#A0522D',
+    fontWeight: '500',
   },
 
   // Footer Section

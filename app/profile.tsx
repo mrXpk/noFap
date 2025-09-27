@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import React from 'react';
 import ProfileScreen from '../components/ProfileScreen';
-import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function ProfilePage() {
   const handleBack = () => {
@@ -22,14 +22,38 @@ export default function ProfilePage() {
     // Navigate to media log
   };
 
+  const handleShareApp = async () => {
+    try {
+      // Check if sharing is available
+      if (!(await Sharing.isAvailableAsync())) {
+        alert('Sharing is not available on your device');
+        return;
+      }
+
+      // Share message
+      await Sharing.shareAsync('Check out the NoFap app - transform your life and build discipline!', {
+        mimeType: 'text/plain',
+        dialogTitle: 'Share NoFap App',
+      });
+    } catch (error) {
+      console.error('Error sharing app:', error);
+      alert('Unable to share app at this time');
+    }
+  };
+
+  const handleSignUp = () => {
+    // Navigate to signup screen
+    router.push('./signup');
+  };
+
   return (
-    <ProtectedRoute>
-      <ProfileScreen
-        onBack={handleBack}
-        onUpgradeToPro={handleUpgradeToPro}
-        onYourWhyEdit={handleYourWhyEdit}
-        onMediaLogPress={handleMediaLogPress}
-      />
-    </ProtectedRoute>
+    <ProfileScreen
+      onBack={handleBack}
+      onUpgradeToPro={handleUpgradeToPro}
+      onYourWhyEdit={handleYourWhyEdit}
+      onMediaLogPress={handleMediaLogPress}
+      onShareApp={handleShareApp}
+      onSignUp={handleSignUp}
+    />
   );
 }
